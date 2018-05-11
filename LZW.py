@@ -15,39 +15,46 @@ def compress(uncompressed, dict_size = 256):
             dict_size += 1
             w = c
 
-    if w:
+    if w: 
         result.append(dictionary[w])
     return result
 
 # https://github.com/RadekSimkanic/Compression-and-transformation/blob/master/LZW/__init__.py
 def decompress(compressed, dict_size = 256):
+    from io import StringIO
+
     dictionary = {i: chr(i) for i in range(dict_size)}
 
-    result = []
+    result = StringIO()
     w = compressed.pop(0)
     w = chr(w)
-    result.append(w)
+    result.write(w)
 
     for k in compressed:
-        if k < dict_size:
+        if k in dictionary:
             entry = dictionary[k]
         elif k == dict_size:
             entry = w + w[0]
         else:
             raise ValueError('Bad compressed k: %s' % k)
-        result.append(entry)
+        result.write(entry)
 
         dictionary[dict_size] = w + entry[0]
         dict_size += 1
 
         w = entry
 
-    clear_result = []
-    for item in result:
-        if len(item) == 1:
-            clear_result.append(item)
-            continue
-        for char in item:
-            clear_result.append(char)
+    return result.getvalue()
 
-    return clear_result
+#import sys
+#if __name__ == '__main__':
+#    msg = 'This is a message.'
+#    print(sys.getsizeof(msg))
+#
+#   com = compress(msg)
+#    print(com)
+#    print(sys.getsizeof(com))
+#
+#    dec = decompress(com)
+#    print(dec)
+#    print(sys.getsizeof(dec))
