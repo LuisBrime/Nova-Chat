@@ -2,6 +2,9 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
 
+import crypto
+import LZW
+
 ### CLIENT HANDLERS ###
 # https://medium.com/swlh/lets-write-a-chat-app-in-python-f6783a9ac170
 def receive():
@@ -9,12 +12,30 @@ def receive():
         try:
             msg = client_socket.recv(BUFSIZ).decode("utf8")
             msg_list.insert(tkinter.END, msg)
+
+            #dec_msg = crypto.decypher(msg, privateKey, publicKey)
+            #print('Message has been decrypted... %s' % dec_msg)
+            #dem_msg = LZW.decompress(dec_msg)
+            #print('Message has been decompressed... %s' % dem_msg)
         except OSError:
             break
 
 def send(event=None):
     msg = my_msg.get()
     my_msg.set("")
+
+    com_msg = LZW.compress(msg)
+
+    listToString = ""
+    for i, item in enumerate(com_msg):
+        if i:
+            listToString = listToString + ','
+        listToString = listToString + str(item)
+    print('Message has been compressed... %s ' % listToString)
+
+    enc_msg = crypto.cypher(listToString, publicKey, 1)
+    print('Message has been encrypted... %s' % enc_msg)
+
     client_socket.send(bytes(msg, "utf8"))
     if msg == "{quit}":
         client_socket.close()
@@ -35,7 +56,7 @@ my_msg = tkinter.StringVar()
 my_msg.set("Type your messages here.")
 scrollbar = tkinter.Scrollbar(messages_frame)
 
-msg_list = tkinter.Listbox(messages_frame, height=30, width=80, yscrollcommand=scrollbar.set)
+msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
 scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
 msg_list.pack()
@@ -51,6 +72,8 @@ send_button.pack()
 top.protocol("WM_DELETE_WINDOW", on_closing)
 ### END GUI ###
 
+keypair = crypto.keygen(2 ** 64)
+publicKey, privateKey = keypair.public, keypair.private
 
 ### CONNECT ###
 # https://medium.com/swlh/lets-write-a-chat-app-in-python-f6783a9ac170
